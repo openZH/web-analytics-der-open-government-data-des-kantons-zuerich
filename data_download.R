@@ -11,4 +11,23 @@ test <- package_search(fq = 'organization:statistisches-amt-kanton-zuerich', row
 test_1 <- test$results
 
 
-urls <- jsonlite::fromJSON("https://opendata.swiss/api/3/action/package_show?id=web-analytics-der-open-government-data-des-kantons-zuerich")
+test_1_selected <- test_1 %>% select(id, groups)
+
+test_1_list <- split(test_1_selected, seq(nrow(test_1_selected)))
+
+extract_language <- function(x){
+  
+  
+  
+  languages <- x$groups[[1]]$display_name
+  
+  languages_1 <- languages %>% mutate(id = x$id) %>% select(id, de)
+  
+}
+
+
+test_4 <-  map(test_1_list, function(x) extract_language(x))
+
+test_5 <- do.call(rbind.data.frame, test_4)
+
+
