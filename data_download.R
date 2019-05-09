@@ -50,10 +50,10 @@ getOpendataSwissData <- function(organization){
   data_results <- data_all$results
   
   
-  data_with_groups <- data_results %>% mutate(groups_de = data_results$groups %>%  map(~getgroups(.) ) %>% as_vector,
-                                              title = data_results$title$de,
-                                              organization_url = data_results$organization$image_display_url,
-                                              organization_name = data_results$organization$name)
+  data_with_groups <- data_results %>% mutate(groups_de = .$groups %>%  map(~getgroups(.) ) %>% as_vector,
+                                              title = .$title$de,
+                                              organization_url = .$organization$image_display_url,
+                                              organization_name = .$organization$name)
   
   
   data_needed <- data_with_groups %>% select(name, title, organization_url, groups_de, organization_name)
