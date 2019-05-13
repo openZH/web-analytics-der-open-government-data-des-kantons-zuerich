@@ -13,13 +13,13 @@ month_1 <- as.Date(paste0(format(as.Date(Sys.Date()), "%Y-%m"),"-01"))-1
 
 
 
-getWebAnalytigs <- function(month, matomo_token){
+getWebAnalytigs <- function(month, matomo_token, name){
   
   # convert character-date to date
   if(class(month)=="character"){month <- as.Date(month, "%Y-%m-%d" )}
   
   # get all organizations of the kanton of Zürich
-  organizations <- getOrganizationsZH(month, matomo_token, "kanton-zuerich")
+  organizations <- getOrganizationsZH(month, matomo_token, name)
   
   
   # get the opendata.swiss data for the organizations
