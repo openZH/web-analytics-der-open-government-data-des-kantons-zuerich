@@ -13,13 +13,13 @@ month_1 <- as.Date(paste0(format(as.Date(Sys.Date()), "%Y-%m"),"-01"))-1
 
 
 
-getWebAnalytigs <- function(month, matomo_token, name){
+getWebAnalytics <- function(month, matomo_token, name){
   
   # convert character-date to date
   if(class(month)=="character"){month <- as.Date(month, "%Y-%m-%d" )}
   
   # get all organizations of the kanton of Zürich
-  organizations <- getOrganizationsZH(month, matomo_token, name)
+  organizations <- getOrganizations(month, matomo_token, name)
   
   
   # get the opendata.swiss data for the organizations
@@ -86,7 +86,7 @@ getOpendataSwissData <- function(organization){
   data_results <- data_all$results
   
   # get groups and the other important variables
-  data_with_groups <- data_results %>% dplyr::mutate(groups_de = .$groups %>%  purrr::map(~getgroups(.) ) %>% purrr::as_vector,
+  data_with_groups <- data_results %>% dplyr::mutate(groups_de = .$groups %>%  purrr::map(~getgroups(.) ) %>% purrr::as_vector(),
                                               title = .$title$de,
                                               organization_url = .$organization$image_display_url,
                                               organization_name = .$organization$name,
@@ -107,7 +107,9 @@ getgroups <- function(x){
   
   
   # extract the german name of the groups and in case of multiple groups, paste them together
-  group <- x %>% magrittr::extract2("display_name")  %>% dplyr::group_by() %>% dplyr::summarise_each(dplyr::funs(paste(., collapse = " / "))) %$% de
+  group <- x %>% magrittr::extract2("display_name")  %>% 
+    dplyr::group_by() %>% 
+    dplyr::summarise_each(dplyr::funs(paste(., collapse = " / "))) %$% de
   
   
   return(group)
