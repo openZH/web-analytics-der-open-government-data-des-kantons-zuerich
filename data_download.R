@@ -38,6 +38,7 @@ getWebAnalytics <- function(month, matomo_token, name){
   # filter the data by the issue date (in case for past months)
   total_data_filtered <- total_data %>% dplyr::filter(issued <= month)
   
+  total_data_sorted <- arrange(total_data_filtered$nb_visits)
   
   return(total_data_filtered)
 }
@@ -88,7 +89,7 @@ getOpendataSwissData <- function(organization){
   # get groups and the other important variables
   data_with_groups <- data_results %>% dplyr::mutate(groups_de = .$groups %>%  purrr::map(~getgroups(.) ) %>% purrr::as_vector(),
                                               title = .$title$de,
-                                              organization_url = .$organization$image_display_url,
+                                              organization_url = paste0("https://opendata.swiss/organization/",organization),
                                               organization_name = .$organization$name,
                                               issued = as.Date(gsub("T", " ", data_results$issued)), "%Y-%m-%d %H:%M:%S")
   
@@ -109,7 +110,7 @@ getgroups <- function(x){
   # extract the german name of the groups and in case of multiple groups, paste them together
   group <- x %>% magrittr::extract2("display_name")  %>% 
     dplyr::group_by() %>% 
-    dplyr::summarise_each(dplyr::funs(paste(., collapse = " / "))) %$% de
+    dplyr::summarise_each(dplyr::funs(paste(., collapse = ";"))) %$% de
   
   
   return(group)
