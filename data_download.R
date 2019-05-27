@@ -42,7 +42,7 @@ getWebAnalytics <- function(month, matomo_token, name) {
 
   total_data_sorted <- dplyr::arrange(total_data_filtered, desc(nb_visits))
 
-  return(total_data_filtered)
+  return(total_data_sorted)
 }
 
 
@@ -53,6 +53,7 @@ getWebAnalytics <- function(month, matomo_token, name) {
 getOrganizations <- function(name) {
 
   # api to get the organizations from matomo
+  ckanr::ckanr_setup(url = "https://opendata.swiss/")
 
   
   data_organization <- ckanr::organization_list(as = "table")
@@ -107,7 +108,7 @@ getgroups <- function(x) {
   group <- x %>%
     magrittr::extract2("display_name") %>%
     dplyr::group_by() %>%
-    dplyr::summarise_each(dplyr::funs(paste(., collapse = ";"))) %$% de
+    dplyr::summarise_each(list(~paste(., collapse = ";"))) %$% de
 
 
   return(group)
@@ -121,12 +122,14 @@ getgroups <- function(x) {
 getMatomoData <- function(organization, month, matomo_token = token) {
 
   # api for matomo data
-  data <- read.csv(paste0("https://piwik.opendata.swiss/index.php?module=API&method=CustomDimensions.getCustomDimension&
+  data <- suppressWarnings(
+                          read.csv(paste0("https://piwik.opendata.swiss/index.php?module=API&method=CustomDimensions.getCustomDimension&
                           format=csv&idSite=1&period=month&idDimension=2&
                           reportUniqueId=CustomDimensions_getCustomDimension_idDimension--2&
                           segment=dimension1%253D%253D", organization, "&label=&date=", month, "&
                           filter_limit=false&format_metrics=1&expanded=1&idDimension=2&token_auth=", matomo_token),
     skipNul = TRUE, encoding = "UTF-8", check.names = FALSE
+  )
   )
 
   # rename first column
