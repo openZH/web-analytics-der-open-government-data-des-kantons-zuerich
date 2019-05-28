@@ -56,21 +56,30 @@ getOrganizations <- function(name) {
   ckanr::ckanr_setup(url = "https://opendata.swiss/")
 
   
-  data_organization <- ckanr::organization_list(as = "table")
+  data_organization <- ckanr::organization_list(as = "table") %>% select(package_count, name)
 
 
 
   # filter the organizations by name
-  organizations_zuerich <- data_organization[grep(name, data_organization$name), "name"] 
-  
-  organizations_zuerich <- organizations_zuerich[organizations_zuerich != "kanton-zuerich"]
+  organizations_zuerich_list <- purrr::map(name, ~extractOrganization(., data_organization)  )   
+  organizations_zuerich <- unlist(organizations_zuerich_list)
 
 
   return(organizations_zuerich)
 }
 
-
-
+# get the organizations that contain the pattern specified in "name"
+extractOrganization <- function(name, data){
+  
+  
+  organization_extract <- data[grep(name, data_organization$name),]
+  
+  organization_extract_short <- organization_extract[organization_extract$name != name & 
+                                                       organization_extract$package_count != 0,"name"]
+  
+  return(organization_extract_short)
+  
+}
 
 
 # function to get the opendata Swiss Data with the ckanr api
@@ -85,18 +94,24 @@ getOpendataSwissData <- function(organization) {
   data_results <- data_all$results
 
   # get groups and the other important variables
-  data_with_groups <- data_results %>% dplyr::mutate(
-    groups_de = .$groups %>% purrr::map(~ getgroups(.)) %>% purrr::as_vector(),
+  data_with_groups <- data_results %>% 
+    dplyr::mutate(
+    groups_de = .$groups %>% 
+      purrr::map(~ getgroups(.)) %>% 
+      purrr::as_vector(),
     title = .$title$de,
     organization_name = .$organization$name,
-    issued = as.Date(gsub("T", " ", data_results$issued)), "%Y-%m-%d %H:%M:%S"
+    issued = as.Date(gsub("T", " ", data_results$issued), "%Y-%m-%d %H:%M:%S")
   ) 
 
 
 
   # select the wished variables
-  data_needed <- data_with_groups %>% dplyr::select(name, title, issued,  groups_de, organization_name) %>% 
-     mutate(organization_url = paste0("https://opendata.swiss/organization/", organization))
+  data_needed <- data_with_groups %>% 
+    dplyr::select(name, title, issued,  groups_de, organization_name) %>% 
+    mutate(organization_url = paste0("https://opendata.swiss/organization/", organization))
+
+  
 }
 
 
@@ -108,7 +123,8 @@ getgroups <- function(x) {
   group <- x %>%
     magrittr::extract2("display_name") %>%
     dplyr::group_by() %>%
-    dplyr::summarise_each(list(~paste(., collapse = ";"))) %$% de
+    dplyr::summarise_each(list(~paste(., collapse = ";"))) %$% 
+    de
 
 
   return(group)
