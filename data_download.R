@@ -5,7 +5,7 @@ library(ckanr)
 
 
 # matomo token needed to query the API
-matomo_token <- "your Token"
+matomo_token <- "fdf8fc140d2b204596e6668dec590697"
 
 
 #month_1 <- as.Date(paste0(format(as.Date(Sys.Date()), "%Y-%m"), "-01")) - 1
