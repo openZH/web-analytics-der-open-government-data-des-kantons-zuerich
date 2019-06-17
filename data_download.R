@@ -12,6 +12,16 @@ month_1 <- as.Date(paste0(format(as.Date(Sys.Date()), "%Y-%m"), "-01")) - 1
 
 
 
+writeWebAnalytics <- function(data, filename){
+  
+  
+  write.table(data, filename, sep="," ,row.names = F,quote = FALSE)
+  
+  
+}
+
+
+
 
 getWebAnalytics <- function(month, matomo_token, name) {
 
@@ -50,7 +60,7 @@ getWebAnalytics <- function(month, matomo_token, name) {
 
 
 # get organizations on the matomo
-getOrganizations <- function(name) {
+getOrganizations <- function(name_org) {
 
   # api to get the organizations from matomo
   ckanr::ckanr_setup(url = "https://opendata.swiss/")
@@ -61,7 +71,7 @@ getOrganizations <- function(name) {
 
 
   # filter the organizations by name
-  organizations_zuerich_list <- purrr::map(name, ~extractOrganization(., data_organization)  )   
+  organizations_zuerich_list <- purrr::map(name_org, ~extractOrganization(., data_organization)  )   
   organizations_zuerich <- unlist(organizations_zuerich_list)
 
 
@@ -72,7 +82,7 @@ getOrganizations <- function(name) {
 extractOrganization <- function(name, data){
   
   
-  organization_extract <- data[grep(name, data_organization$name),]
+  organization_extract <- data[grep(name, data$name),]
   
   organization_extract_short <- organization_extract[organization_extract$name != name & 
                                                        organization_extract$package_count != 0,"name"]
@@ -84,22 +94,24 @@ extractOrganization <- function(name, data){
 
 # function to get the opendata Swiss Data with the ckanr api
 getOpendataSwissData <- function(organization) {
-
+  
+  #sprache_1 <- quo(!!sym(sprache))
+  
   # set default url
   ckanr::ckanr_setup(url = "https://opendata.swiss/")
 
   # api for opendata-swiss data
   data_all <- ckanr::package_search(fq = paste0("organization:", organization), rows = 1000, as = "table")
+  
+  themes <- getThemes() %>% select(name)
 
   data_results <- data_all$results
 
   # get groups and the other important variables
   data_with_groups <- data_results %>% 
     dplyr::mutate(
-    groups_de = .$groups %>% 
-      purrr::map(~ getgroups(.)) %>% 
-      purrr::as_vector(),
-    title = .$title$de,
+    groups = .$groups %>% 
+      purrr::map(~ getgroups(.)),
     organization_name = .$organization$name,
     issued = as.Date(gsub("T", " ", data_results$issued), "%Y-%m-%d %H:%M:%S")
   ) 
@@ -108,24 +120,28 @@ getOpendataSwissData <- function(organization) {
 
   # select the wished variables
   data_needed <- data_with_groups %>% 
-    dplyr::select(name, title, issued,  groups_de, organization_name) %>% 
-    mutate(organization_url = paste0("https://opendata.swiss/organization/", organization))
-
+    dplyr::select(name, issued,  groups, organization_name) %>% 
+    mutate(organization_url = paste0("https://opendata.swiss/organization/", organization)) 
+  
+  
+  test <- data_needed %>% 
+          pull(groups) %>% 
+          map(., ~spreadGroups(.,themes)) %>% 
+          bind_rows() %>% 
+          bind_cols(data_needed,.) %>% 
+          select(-groups)
+  
   
 }
 
 
 # function to extract the group names and paste them together in one column
 getgroups <- function(x) {
-
-
+  
   # extract the german name of the groups and in case of multiple groups, paste them together
   group <- x %>%
-    magrittr::extract2("display_name") %>%
-    dplyr::group_by() %>%
-    dplyr::summarise_each(list(~paste(., collapse = ";"))) %$% 
-    de
-
+    select(name) %>%
+    dplyr::group_by() %>% as.list()
 
   return(group)
 }
@@ -159,3 +175,36 @@ getMatomoData <- function(organization, month, matomo_token = token) {
 
   return(data)
 }
+
+
+
+getThemes <- function(){
+  
+  ckanr::ckanr_setup(url = "https://opendata.swiss/")
+  
+  
+  themes <-ckanr::group_list(as = "table", all_fields = TRUE)
+  
+  
+  theme_titles <- themes %>% magrittr::extract2("display_name") 
+  
+  names <- select(themes, name)
+  
+  theme_table <- bind_cols(theme_titles,names)
+  
+  
+  
+}
+
+
+spreadGroups <- function(x, themes){
+  
+  y <- x[[1]]
+  
+  themes_marked <- themes %>% mutate(anzahl = ifelse(name %in% y, 1, 0))
+  
+  themes_spread <- spread(themes_marked, name, anzahl)
+  
+  
+}
+
