@@ -8,6 +8,6 @@ Um die monatlichen Reports zu erstellen, sprechen wir zwei Schnittstellen (API) 
 * CKAN Action API des Metadaten-Katalogs opendata.swiss: https://handbook.opendata.swiss/support/api.html; dies ist eine offen zugängliche Schnittstelle.
 * API der https://matomo.org/ Instanz des Metadaten-Katalogs opendata.swiss; diese Schnittstelle ist nur für Organisationen zugänglich, die Metadaten auf bzw. via opendata.swiss publizieren.
 
-Die Beschreibung der einzelnen Daten befinden sich im File.
+Die Funktionen sind im File data_download.R beschrieben.
 
-Ein Beispiel eines Daten-Downloads ist ganz oben im File vorhanden.
+Ein Beispiel einer Report-Erstellung ist im File template.R beschrieben.
