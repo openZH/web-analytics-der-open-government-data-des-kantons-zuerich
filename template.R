@@ -15,7 +15,7 @@
 #8. adjust the filename in line 27
 #9. curser on line 27 and press ctrl+Enter to export the data as a csv-file
 
-source("data_download.R")
+source("C:/gitrepos/web-analytics-der-open-government-data-des-kantons-zuerich/data_download.R")
 
 # matomo token needed to query the API
 matomo_token <- ""
