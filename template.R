@@ -5,13 +5,15 @@
 # best is to make a pull before using the functions
 # -> right click on the folder -> GitSync -> PULL
 
-#1. insert matomo_token
-#2. adjust the month in the object name
-#3. adjust the month in the function: month = ....
-#4. curser on line 19 and press ctrl+Enter to run the function
-#5. have a look at the file -> in global environment klick on the object
-#6. adjust the filename in line 27
-#7. curser on line 27 and press ctrl+Enter to export the data as a csv-file
+#1. curser on line 18 and press ctrl+Enter
+#2. insert matomo_token
+#3. adjust the month in the object name
+#4. adjust the month in the function: month = ....
+#5. adjust the name in the function: name = "..."
+#6. curser on line 19 and press ctrl+Enter to run the function
+#7. have a look at the file -> in global environment klick on the object
+#8. adjust the filename in line 27
+#9. curser on line 27 and press ctrl+Enter to export the data as a csv-file
 
 source("data_download.R")
 
