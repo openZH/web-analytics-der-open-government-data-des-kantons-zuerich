@@ -5,10 +5,15 @@ library(ckanr)
 
 
 # matomo token needed to query the API
-matomo_token <- "your Token"
+matomo_token <- ""
 
 
-month_1 <- as.Date(paste0(format(as.Date(Sys.Date()), "%Y-%m"), "-01")) - 1
+#month_1 <- as.Date(paste0(format(as.Date(Sys.Date()), "%Y-%m"), "-01")) - 1
+
+
+OGDanalytics_2019_05 <- getWebAnalytics("2019-05-31", matomo_token, "kanton-zuerich")
+
+writeWebAnalytics(OGDanalytics_2019_05, "L:/STAT/08_DS/06_Diffusion/OGD/Datenproduzenten_ZH/Open-ZH/ZH_Datasets_UniqueActions_2019-05.csv")
 
 
 
