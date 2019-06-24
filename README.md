@@ -1,6 +1,6 @@
 # web-analytics-der-open-government-data-des-kantons-zuerich
 
-In diesem Repository dokumentieren wir, wie der Kanton Zürich ausgewählte Web Analytics zu seinen offenen Behördendaten (OGD), die er auf dem zentralen Metadaten-Katalogs opendata.swiss publiziert, erstellt.
+In diesem Repository dokumentieren wir, wie der Kanton Zürich ausgewählte Web Analytics zu seinen offenen Behördendaten (OGD) erstellt, die er auf dem zentralen Metadaten-Katalogs opendata.swiss publiziert.
 
 Wir erstellen monatliche Reports der Zugriffe auf Datensätze von Organen des Kantons Zürich in R und exportieren diese als .csv-Ressource. Diese publizieren wir in der ersten Woche des Folgemonats unter https://opendata.swiss/de/dataset/web-analytics-der-open-government-data-des-kantons-zuerich
 
