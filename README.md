@@ -8,6 +8,6 @@ Um die monatlichen Reports zu erstellen, sprechen wir zwei Schnittstellen (API) 
 * CKAN Action API des Metadaten-Katalogs opendata.swiss: https://handbook.opendata.swiss/support/api.html; dies ist eine offen zugängliche Schnittstelle.
 * API der https://matomo.org/ Instanz des Metadaten-Katalogs opendata.swiss; diese Schnittstelle ist nur für Organisationen zugänglich, die Metadaten auf bzw. via opendata.swiss publizieren.
 
-Die Funktionen sind im File data_download.R beschrieben.
+Die Funktionen sind im File 'data_download.R' beschrieben: https://github.com/openZH/web-analytics-der-open-government-data-des-kantons-zuerich/blob/master/data_download.R
 
-Ein Beispiel einer Report-Erstellung ist im File template.R beschrieben.
+Ein Beispiel einer Report-Erstellung ist im File 'template.R' beschrieben: https://github.com/openZH/web-analytics-der-open-government-data-des-kantons-zuerich/blob/master/template.R
