@@ -31,7 +31,7 @@ getWebAnalytics <- function(month, matomo_token, name) {
   }
 
   # get all organizations of the kanton of Zürich
-  organizations <- getOrganizations(name)
+  organizations <- getOrganizations(name, month)
 
 
   # get the opendata.swiss data for the organizations
@@ -60,13 +60,18 @@ getWebAnalytics <- function(month, matomo_token, name) {
 
 
 # get organizations on the matomo
-getOrganizations <- function(name_org) {
+getOrganizations <- function(name_org, month) {
 
   # api to get the organizations from matomo
   ckanr::ckanr_setup(url = "https://opendata.swiss/")
 
   
-  data_organization <- ckanr::organization_list(as = "table") %>% select(package_count, name)
+  data_organization <- ckanr::organization_list(as = "table") 
+  
+  data_organization_date <- data_organization %>% 
+    mutate(created = as.Date(gsub("T", " ", data_organization$created), "%Y-%m-%d")) %>% 
+    filter(created < month) %>% 
+    select(package_count, name)
 
 
 
