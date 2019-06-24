@@ -66,6 +66,11 @@ getWebAnalytics <- function(month, matomo_token, name) {
 
 # get organizations on the matomo
 getOrganizations <- function(name_org, month) {
+  
+  if (class(month) == "character") {
+    month <- as.Date(month, "%Y-%m-%d")
+  }
+  
 
   # api to get the organizations from matomo
   ckanr::ckanr_setup(url = "https://opendata.swiss/")
@@ -74,18 +79,26 @@ getOrganizations <- function(name_org, month) {
   data_organization <- ckanr::organization_list(as = "table") 
   
   data_organization_date <- data_organization %>% 
-    mutate(created = as.Date(gsub("T", " ", data_organization$created), "%Y-%m-%d")) %>% 
-    filter(created < month) %>% 
+    mutate(created = as.Date(gsub("T", " ", data_organization$created), format("%Y-%m-%d"))) %>% 
+    mutate(created = format(created, "%Y-%m")) %>% 
+    filter(created < format(month, "%Y-%m" )) %>% 
     select(package_count, name)
 
 
 
   # filter the organizations by name
-  organizations_zuerich_list <- purrr::map(name_org, ~extractOrganization(., data_organization)  )   
-  organizations_zuerich <- unlist(organizations_zuerich_list)
+  organizations_list <- purrr::map(name_org, ~extractOrganization(., data_organization_date)  )   
+  organizations <- unlist(organizations_list)
+  
+  
+  if (month < as.Date("2019-06-30", "%Y-%m-%d")) {
+    
+    organizations <- organizations[-(organizations=="fachstelle-ogd-kanton-zuerich")]
+    
+  }
 
 
-  return(organizations_zuerich)
+  return(organizations)
 }
 
 # get the organizations that contain the pattern specified in "name"
