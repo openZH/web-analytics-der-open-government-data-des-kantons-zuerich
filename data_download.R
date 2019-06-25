@@ -95,10 +95,10 @@ getOrganizations <- function(name_org, month) {
 
   # hack to filter the fachstelle-ogd-kanton-zuerich since there is no data
   # in matomo before 2019-06-30
-  if (month < as.Date("2019-06-30", "%Y-%m-%d")) {
+  if (month < as.Date("2019-06-30", "%Y-%m-%d") & month > as.Date("2019-01-01", "%Y-%m-%d")) {
     organizations <- organizations[
       -(organizations == "fachstelle-ogd-kanton-zuerich")]
-  }
+  } else {organizations <- organizations}
 
 
   return(organizations)

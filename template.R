@@ -22,12 +22,12 @@ matomo_token <- "fdf8fc140d2b204596e6668dec590697"
 
 
 # function that gets the data
-OGDanalytics_2019_02 <- getWebAnalytics(
-  month = "2019-02-28",
+OGDanalytics_2018_12 <- getWebAnalytics(
+  month = "2018-12-31",
   matomo_token = matomo_token,
   name = "kanton-zuerich"
 )
 
 # function that exports the data
-writeWebAnalytics(OGDanalytics_2019_02, "L:/STAT/08_DS/06_Diffusion/OGD/Datenproduzenten_ZH/Open-ZH/ZH_Datasets_UniqueActions_2019-02.csv")
+writeWebAnalytics(OGDanalytics_2018_12, "L:/STAT/08_DS/06_Diffusion/OGD/Datenproduzenten_ZH/Open-ZH/ZH_Datasets_UniqueActions_2018-12.csv")
 
