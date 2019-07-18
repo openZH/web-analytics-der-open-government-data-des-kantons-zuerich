@@ -17,13 +17,15 @@
 
 source("data_download.R")
 
+# source("token.R")
+
 # matomo token needed to query the API
-matomo_token <- "fdf8fc140d2b204596e6668dec590697"
+matomo_token <- "YourApiToken"
 
 
 # function that gets the data
-OGDanalytics_2018_12 <- getWebAnalytics(
-  month = "2018-12-31",
+OGDanalytics_2019_07 <- getWebAnalytics(
+  month = "2019-06-30",
   matomo_token = matomo_token,
   name = "kanton-zuerich"
 )
@@ -31,3 +33,6 @@ OGDanalytics_2018_12 <- getWebAnalytics(
 # function that exports the data
 writeWebAnalytics(OGDanalytics_2018_12, "L:/STAT/08_DS/06_Diffusion/OGD/Datenproduzenten_ZH/Open-ZH/ZH_Datasets_UniqueActions_2018-12.csv")
 
+
+
+getWebAnalytics(month = "2018-12-31",matomo_token=matomo_token, name="kanton_zuerich")

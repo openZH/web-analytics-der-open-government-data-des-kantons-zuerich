@@ -2,17 +2,35 @@
 library(tidyverse)
 library(magrittr)
 library(ckanr)
+library(fuzzyjoin)
 
 
-
-# function to write the webanalytics-data --------------------------------------
+#' function to write the webanalytics-data
+#'
+#' @param data dataset
+#' @param filename filename
+#'
+#' @return
+#' @export
+#'
+#' @examples
 
 writeWebAnalytics <- function(data, filename) {
   write.table(data, filename, sep = ",", row.names = F, quote = FALSE)
 }
 
 
-# function to get the webanalytics-data ----------------------------------------
+#' function to get the webanalytics-data from matomo instance
+#'
+#' @param month period (month) for which the webanalytics should be retrieved
+#' @param matomo_token access token to access the matomo instance
+#' @param name name (approximate string pattern) that matches the organizations for which the data should be loaded
+#'
+#' @return data.frame
+#' @export
+#'
+#' @examples  
+#' \donttest{ getWebAnalytics(month = "2018-12-31",matomo_token, name="kanton_zuerich")}
 
 getWebAnalytics <- function(month, matomo_token, name) {
 
@@ -39,11 +57,11 @@ getWebAnalytics <- function(month, matomo_token, name) {
 
   matomo_data_frame <- do.call(rbind, matomo_data)
 
-  # join the data by the label
   total_data <- dplyr::left_join(opendata_swiss_data_frame,
     matomo_data_frame,
     by = c("name" = "label")
   )
+  
 
   # filter the data by the issue date (in case for past months)
   total_data_filtered <-
@@ -56,11 +74,19 @@ getWebAnalytics <- function(month, matomo_token, name) {
 }
 
 
+#' function to find organization on opendata.swiss 
+#'
+#' @param name_org string pattern that partially matches the organization name
+#' @param month argument to filter for the month of existence
+#'
+#' @return string vector
+#' @export
+#'
+#' @examples
+#' \donttest{ 
+#' #get all organizations that contain 'kanton-zuerich' in their name and already existed on opendata.swiss in dec. 2018
+#' getOrganizations(name_org="kanton-zuerich", month = "2018-12-31")}
 
-# function to get organizations with a certain pattern -------------------------
-# the month filters the organizations by its creation date
-
-# get organizations on the matomo
 getOrganizations <- function(name_org, month) {
   if (class(month) == "character") {
     month <- as.Date(month, "%Y-%m-%d")
@@ -116,7 +142,18 @@ extractOrganization <- function(name, data) {
 }
 
 
-# function to get the opendata Swiss Data with the ckanr api
+#' function to get the opendata Swiss Metadata for a single organization
+#'
+#' @param organization exact name of the data publisher (organization) for which metadata should be loaded (via CKAN Action API)
+#'
+#' @return
+#' @export
+#'
+#' @examples
+#' \donttest{ 
+#' #get all the datasets of a specific publisher with attributes (topics)
+#' getOpendataSwissData("statistisches-amt-kanton-zuerich")}
+
 getOpendataSwissData <- function(organization) {
 
   # sprache_1 <- quo(!!sym(sprache))
@@ -142,8 +179,10 @@ getOpendataSwissData <- function(organization) {
       issued = as.Date(gsub("T", " ", data_results$issued), "%Y-%m-%d %H:%M:%S")
     )
 
+# data_with_groups$name
 
-
+  
+  
   # select the wished variables
   data_needed <- data_with_groups %>%
     dplyr::select(name, issued, groups, organization_name) %>%
@@ -160,7 +199,14 @@ getOpendataSwissData <- function(organization) {
 }
 
 
-# function to extract the group names and paste them together in one column
+#' function to extract the group names and paste them together in one column
+#'
+#' @param x group variable
+#'
+#' @return group list
+#'
+#' @examples
+
 getgroups <- function(x) {
 
   # extract the german name of the groups and in case of multiple groups, paste them together
@@ -174,9 +220,20 @@ getgroups <- function(x) {
 
 
 
-# matomo token needed to query the API
+#' function to retrieve monthly webstatsdata via matomo Api
+#'
+#' @param organization 
+#' @param month 
+#' @param matomo_token matomo token needed to query the API
+#'
+#' @return
+#' @export
+#'
+#' @examples 
+#' \donttest{ 
+#' #get all the datasets of a specific publisher with attributes (topics)
+#' getMatomoData(organization="geoinformation-kanton-zuerich",month = "2018-12-31",matomo_token="YOUR MATOMO TOKEN HERE")}
 
-# function to retrieve monthly webstatsdata via matomo Api
 getMatomoData <- function(organization, month, matomo_token = token) {
 
   # api for matomo data
@@ -200,12 +257,16 @@ filter_limit=false&format_metrics=1&expanded=1&idDimension=2&token_auth=",
 
   # convert factor to characer
   data$label <- as.character(data$label)
+  
+  # data$permaurl <- gsub("dimension2==","",data$metadata_segment)
 
   return(data)
 }
 
 
-# helper function to extract the groups ----------------------------------------
+#' helper function to extract the groups
+#' @return theme table
+
 
 getThemes <- function() {
   ckanr::ckanr_setup(url = "https://opendata.swiss/")
@@ -221,7 +282,8 @@ getThemes <- function() {
   theme_table <- bind_cols(theme_titles, names)
 }
 
-# helper function to spread the groups -----------------------------------------
+#' helper function to spread the groups to wide
+#' @return theme table
 
 spreadGroups <- function(x, themes) {
   y <- x[[1]]
