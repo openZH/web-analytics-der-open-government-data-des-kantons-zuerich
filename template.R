@@ -15,23 +15,23 @@
 #8. adjust the filename in line 32
 #9. curser on line 32 and press ctrl+Enter to export the data as a csv-file
 
-source("data_download.R")
+source("data_download.R") # without "geoinformation-kanton-zuerich" due to insufficient metadata (see row 111)
 
 # source("token.R")
 
 # matomo token needed to query the API
-matomo_token <- "YourApiToken"
+matomo_token <- matomo_token
 
 
 # function that gets the data
-OGDanalytics_2019_07 <- getWebAnalytics(
-  month = "2019-06-30",
+OGDanalytics_2020_07 <- getWebAnalytics(
+  month = "2020-07-30",
   matomo_token = matomo_token,
   name = "kanton-zuerich"
 )
 
 # function that exports the data
-writeWebAnalytics(OGDanalytics_2018_12, "L:/STAT/08_DS/06_Diffusion/OGD/Datenproduzenten_ZH/Open-ZH/ZH_Datasets_UniqueActions_2018-12.csv")
+writeWebAnalytics(OGDanalytics_2020_07, "L:/STAT/08_DS/06_Diffusion/OGD/Datenproduzenten_ZH/Open-ZH/ZH_Datasets_UniqueActions_2020-07.csv")
 
 
 

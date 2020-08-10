@@ -33,7 +33,6 @@ writeWebAnalytics <- function(data, filename) {
 #' \donttest{ getWebAnalytics(month = "2018-12-31",matomo_token, name="kanton_zuerich")}
 
 getWebAnalytics <- function(month, matomo_token, name) {
-
   # convert character-date to date
   if (class(month) == "character") {
     month <- as.Date(month, "%Y-%m-%d")
@@ -88,6 +87,8 @@ getWebAnalytics <- function(month, matomo_token, name) {
 #' getOrganizations(name_org="kanton-zuerich", month = "2018-12-31")}
 
 getOrganizations <- function(name_org, month) {
+  name_org = "kanton-zuerich"
+  
   if (class(month) == "character") {
     month <- as.Date(month, "%Y-%m-%d")
   }
@@ -97,7 +98,7 @@ getOrganizations <- function(name_org, month) {
   ckanr::ckanr_setup(url = "https://opendata.swiss/")
 
 
-  data_organization <- ckanr::organization_list(as = "table")
+  data_organization <- ckanr::organization_list(limit = 1000, as = "table")
 
   data_organization_date <-
     data_organization %>%
@@ -106,7 +107,9 @@ getOrganizations <- function(name_org, month) {
       format("%Y-%m-%d")
     )) %>%
     mutate(created = format(created, "%Y-%m")) %>%
-    filter(created < format(month, "%Y-%m")) %>%
+    filter(created < format(month, "%Y-%m"),
+           # filter to remove "geoinformation-kanton-zuerich"
+           name != "geoinformation-kanton-zuerich") %>%
     select(package_count, name)
 
   # filter the organizations by name
@@ -232,7 +235,7 @@ getgroups <- function(x) {
 #' @examples 
 #' \donttest{ 
 #' #get all the datasets of a specific publisher with attributes (topics)
-#' getMatomoData(organization="geoinformation-kanton-zuerich",month = "2018-12-31",matomo_token="YOUR MATOMO TOKEN HERE")}
+#' getMatomoData(organization="geoinformation-kanton-zuerich",month = "2018-12-31",matomo_token=matomo_token)}
 
 getMatomoData <- function(organization, month, matomo_token = token) {
 
