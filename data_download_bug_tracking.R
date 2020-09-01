@@ -1,0 +1,329 @@
+# Skript mit leichten Anpassungen für Fehleridentifikation
+
+# Das Skript lief nicht mehr sauber durch, da bei vielen GIS-Datensätzen das Thema in den opendata.swiss Metadaten fehlt.
+
+
+library(tidyverse)
+library(magrittr)
+library(ckanr)
+library(fuzzyjoin)
+
+
+#' function to write the webanalytics-data
+#'
+#' @param data dataset
+#' @param filename filename
+#'
+#' @return
+#' @export
+#'
+#' @examples
+
+writeWebAnalytics <- function(data, filename) {
+  write.table(data, filename, sep = ",", row.names = F, quote = FALSE)
+}
+
+
+#' function to get the webanalytics-data from matomo instance
+#'
+#' @param month period (month) for which the webanalytics should be retrieved
+#' @param matomo_token access token to access the matomo instance
+#' @param name name (approximate string pattern) that matches the organizations for which the data should be loaded
+#'
+#' @return data.frame
+#' @export
+#'
+#' @examples  
+#' \donttest{ getWebAnalytics(month = "2018-12-31",matomo_token, name="kanton-zuerich")}
+
+getWebAnalytics <- function(month, matomo_token, name) {
+
+  # convert character-date to date
+  if (class(month) == "character") {
+    month <- as.Date(month, "%Y-%m-%d")
+  }
+  
+  safelyORG <- safely(getOrganizations)
+
+  # get all organizations of the kanton of Zürich
+  organizations <- getOrganizations(name, month)
+
+
+
+  # get the opendata.swiss data for the organizations
+  opendata_swiss_data <-
+    organizations %>%
+    purrr::map(~ getOpendataSwissData(.))
+  
+  purrr::map(organizations[6:9],~getOpendataSwissData(.))
+  
+  # hello <- getOpendataSwissData("kanton-zuerich")
+
+  opendata_swiss_data_frame <- do.call(rbind, opendata_swiss_data)
+
+
+  # get the matomo data for the organizations
+  matomo_data <-
+    organizations %>%
+    purrr::map(~ getMatomoData(., month = month, matomo_token = matomo_token))
+
+  matomo_data_frame <- do.call(rbind, matomo_data)
+
+  total_data <- dplyr::left_join(opendata_swiss_data_frame,
+    matomo_data_frame,
+    by = c("name" = "label")
+  )
+  
+
+  # filter the data by the issue date (in case for past months)
+  total_data_filtered <-
+    total_data %>%
+    dplyr::filter(issued <= month)
+
+  total_data_sorted <- dplyr::arrange(total_data_filtered, desc(nb_visits))
+
+  return(total_data_sorted)
+}
+
+
+#' function to find organization on opendata.swiss 
+#'
+#' @param name_org string pattern that partially matches the organization name
+#' @param month argument to filter for the month of existence
+#'
+#' @return string vector
+#' @export
+#'
+#' @examples
+#' \donttest{ 
+#' #get all organizations that contain 'kanton-zuerich' in their name and already existed on opendata.swiss in dec. 2018
+#' getOrganizations(name_org="kanton-zuerich", month = "2018-12-31")}
+
+getOrganizations <- function(name_org, month) {
+  if (class(month) == "character") {
+    month <- as.Date(month, "%Y-%m-%d")
+  }
+
+
+
+  # api to get the organizations from matomo
+  ckanr::ckanr_setup(url = "https://opendata.swiss/")
+
+
+  data_organization <- ckanr::organization_list(as = "table",limit=100)
+  
+
+  data_organization_date <-
+    data_organization %>%
+    mutate(created = as.Date(
+      gsub("T", " ", data_organization$created),
+      format("%Y-%m-%d")
+    )) %>%
+    mutate(created = format(created, "%Y-%m")) %>%
+  dplyr::filter(created <= format(month, "%Y-%m")) %>%
+    select(package_count, name)
+
+  # filter the organizations by name
+  organizations_list <- purrr::map(
+    name_org,
+    ~ extractOrganization(
+      .,
+      data_organization_date
+    )
+  )
+  organizations <- unlist(organizations_list)
+
+  # hack to filter the fachstelle-ogd-kanton-zuerich since there is no data
+  # in matomo before 2019-06-30
+  if (month < as.Date("2019-06-30", "%Y-%m-%d") & month > as.Date("2019-01-01", "%Y-%m-%d")) {
+    organizations <- organizations[
+      -(organizations == "fachstelle-ogd-kanton-zuerich")]
+  } else {organizations <- organizations}
+
+
+  return(organizations)
+}
+
+# get the organizations that contain the pattern specified in "name"
+extractOrganization <- function(name, data) {
+  organization_extract <- data[grep(name, data$name), ]
+
+  organization_extract_short <- organization_extract[
+    organization_extract$name != name &
+    organization_extract$package_count != 0, "name"]
+
+  return(organization_extract_short)
+}
+
+
+#' function to get the opendata Swiss Metadata for a single organization
+#'
+#' @param organization exact name of the data publisher (organization) for which metadata should be loaded (via CKAN Action API)
+#'
+#' @return
+#' @export
+#'
+#' @examples
+#' \donttest{ 
+#' #get all the datasets of a specific publisher with attributes (topics)
+#' getOpendataSwissData("statistisches-amt-kanton-zuerich")}
+
+getOpendataSwissData <- function(organization) {
+
+  # sprache_1 <- quo(!!sym(sprache))
+
+  # set default url
+  ckanr::ckanr_setup(url = "https://opendata.swiss/")
+
+  # api for opendata-swiss data
+  data_all <- ckanr::package_search(fq = paste0("organization:", 
+                                                organization), 
+                                    rows = 1000, as = "table")
+
+  themes <- getThemes() %>% select(name)
+
+  data_results <- data_all$results
+
+ 
+  
+
+  # get groups and the other important variables
+  data_with <- data_results %>%
+                      mutate(n_topics=.$groups %>% 
+                               map_dbl(ncol)) %>%
+    mutate(groups = ifelse(n_topics>1,
+      .$groups %>%
+        purrr::map(~ getgroups(.)),"Andere"),
+        organization_name = .$organization$name,
+        issued = as.Date(gsub("T", " ", data_results$issued), "%Y-%m-%d %H:%M:%S")
+    )
+  
+# orgs <-data_results$organization
+
+# map_dfr(data_results$groups,1)
+
+# data_with_groups$name
+  
+  <-
+
+  
+  
+  # select the wished variables
+  data_needed <- data_with_groups %>%
+    dplyr::select(name, issued, groups, organization_name) %>%
+    mutate(organization_url = paste0("https://opendata.swiss/organization/", 
+                                     organization))
+
+
+  test <- data_needed %>%
+    pull(groups) %>%
+    map(., ~ spreadGroups(., themes)) %>%
+    bind_rows() %>%
+    bind_cols(data_needed, .) %>%
+    select(-groups)
+}
+
+
+#' function to extract the group names and paste them together in one column
+#'
+#' @param x group variable
+#'
+#' @return group list
+#'
+#' @examples
+
+getgroups <- function(x) {
+
+  # extract the german name of the groups and in case of multiple groups, paste them together
+  group <- x %>%
+    select(.$name) %>%
+    dplyr::group_by() %>%
+    as.list()
+
+  return(group)
+}
+
+
+getgroups(data_results$groups[[2]]$name)
+
+data_results$display_name
+
+data_results$display_name[c(279:286),]
+
+data_results <-data_results %>% mutate(n_topics=ncol(.$groups))
+
+data_results$groups
+
+
+#' function to retrieve monthly webstatsdata via matomo Api
+#'
+#' @param organization 
+#' @param month 
+#' @param matomo_token matomo token needed to query the API
+#'
+#' @return
+#' @export
+#'
+#' @examples 
+#' \donttest{ 
+#' #get all the datasets of a specific publisher with attributes (topics)
+#' getMatomoData(organization="geoinformation-kanton-zuerich",month = "2018-12-31",matomo_token="YOUR MATOMO TOKEN HERE")}
+
+getMatomoData <- function(organization, month, matomo_token = token) {
+
+  # api for matomo data
+  data <- suppressWarnings(
+    read.csv(paste0("https://piwik.opendata.swiss/index.php?
+module=API&method=CustomDimensions.getCustomDimension&
+format=csv&idSite=1&period=month&idDimension=2&
+reportUniqueId=CustomDimensions_getCustomDimension_idDimension--2&
+segment=dimension1%253D%253D", organization, "&label=&date=", month, "&
+filter_limit=false&format_metrics=1&expanded=1&idDimension=2&token_auth=", 
+                    matomo_token),
+      skipNul = TRUE, encoding = "UTF-8", check.names = FALSE
+    )
+  )
+
+  # rename first column
+  names(data)[1] <- "label"
+
+  # add date column
+  data$date <- month
+
+  # convert factor to characer
+  data$label <- as.character(data$label)
+  
+  # data$permaurl <- gsub("dimension2==","",data$metadata_segment)
+
+  return(data)
+}
+
+
+#' helper function to extract the groups
+#' @return theme table
+
+
+getThemes <- function() {
+  ckanr::ckanr_setup(url = "https://opendata.swiss/")
+
+
+  themes <- ckanr::group_list(as = "table", all_fields = TRUE)
+
+
+  theme_titles <- themes %>% magrittr::extract2("display_name")
+
+  names <- select(themes, name)
+
+  theme_table <- bind_cols(theme_titles, names)
+}
+
+#' helper function to spread the groups to wide
+#' @return theme table
+
+spreadGroups <- function(x, themes) {
+  y <- x[[1]]
+
+  themes_marked <- themes %>% mutate(anzahl = ifelse(name %in% y, 1, 0))
+
+  themes_spread <- spread(themes_marked, name, anzahl)
+}
