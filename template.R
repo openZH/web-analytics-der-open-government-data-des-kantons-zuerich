@@ -27,7 +27,7 @@ matomo_token <- matomo_token
 OGDanalytics_2020_07 <- getWebAnalytics(
   month = "2020-07-30",
   matomo_token = matomo_token,
-  name = "kanton-zuerich"
+  name = "kanton_zuerich"
 )
 
 # function that exports the data
