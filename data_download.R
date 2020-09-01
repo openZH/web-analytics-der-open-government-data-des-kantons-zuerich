@@ -30,7 +30,7 @@ writeWebAnalytics <- function(data, filename) {
 #' @export
 #'
 #' @examples  
-#' \donttest{ getWebAnalytics(month = "2018-12-31",matomo_token, name="kanton_zuerich")}
+#' \donttest{ getWebAnalytics(month = "2020-03-31",matomo_token, name="kanton_zuerich")}
 
 getWebAnalytics <- function(month, matomo_token, name) {
   # convert character-date to date
@@ -157,7 +157,7 @@ extractOrganization <- function(name, data) {
 #' #get all the datasets of a specific publisher with attributes (topics)
 #' getOpendataSwissData("statistisches-amt-kanton-zuerich")}
 
-getOpendataSwissData <- function(organization) {
+getOpendataSwissData <- function(organization="kanton-zuerich") {
 
   # sprache_1 <- quo(!!sym(sprache))
 
@@ -180,7 +180,7 @@ getOpendataSwissData <- function(organization) {
         purrr::map(~ getgroups(.)),
       organization_name = .$organization$name,
       issued = as.Date(gsub("T", " ", data_results$issued), "%Y-%m-%d %H:%M:%S")
-    )
+    ) %>% bind_rows()
 
 # data_with_groups$name
 
@@ -193,7 +193,7 @@ getOpendataSwissData <- function(organization) {
                                      organization))
 
 
-  test <- data_needed %>%
+data_needed %>%
     pull(groups) %>%
     map(., ~ spreadGroups(., themes)) %>%
     bind_rows() %>%
