@@ -27,12 +27,9 @@ matomo_token <- matomo_token
 OGDanalytics_2020_07 <- getWebAnalytics(
   month = "2020-07-30",
   matomo_token = matomo_token,
-  name = "kanton_zuerich"
+  name = "kanton-zuerich"
 )
 
 # function that exports the data
 writeWebAnalytics(OGDanalytics_2020_07, "L:/STAT/08_DS/06_Diffusion/OGD/Datenproduzenten_ZH/Open-ZH/ZH_Datasets_UniqueActions_2020-07.csv")
 
-
-
-getWebAnalytics(month = "2018-12-31",matomo_token=matomo_token, name="kanton_zuerich")
