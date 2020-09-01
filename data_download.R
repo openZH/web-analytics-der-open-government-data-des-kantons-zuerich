@@ -33,16 +33,32 @@ writeWebAnalytics <- function(data, filename) {
 #' \donttest{ getWebAnalytics(month = "2020-03-31",matomo_token, name="kanton_zuerich")}
 
 getWebAnalytics <- function(month, matomo_token, name) {
+  
   # convert character-date to date
   if (class(month) == "character") {
     month <- as.Date(month, "%Y-%m-%d")
   }
-
+  
+  safelyORG <- safely(getOrganizations)
+  
   # get all organizations of the kanton of Zürich
   organizations <- getOrganizations(name, month)
-
   
-  # wrap Function into safely to capture errors in case of organisations for which data is missing
+  
+  
+  # get the opendata.swiss data for the organizations
+  opendata_swiss_data <-
+    organizations %>%
+    purrr::map(~ getOpendataSwissData(.))
+  
+  # Test
+  # purrr::map(organizations[6:9],~getOpendataSwissData(.))
+  
+  # hello <- getOpendataSwissData("kanton-zuerich")
+  
+  opendata_swiss_data_frame <- do.call(rbind, opendata_swiss_data)
+  
+  # get the matomo data for the organizations
   safematomo <-safely(getMatomoData)
   
   matomo_data <-
@@ -53,34 +69,21 @@ getWebAnalytics <- function(month, matomo_token, name) {
   
   matomo_data_frame  <- map_dfr(matomo_data,"result")
   
-
-  # get the opendata.swiss data for the organizations
-  opendata_swiss_data <-
-    organizations %>%
-    purrr::map(~ getOpendataSwissData(.))
-
-  opendata_swiss_data_frame <- do.call(rbind, opendata_swiss_data)
-
-  # get the matomo data for the organizations
-  matomo_data <-
-    organizations %>%
-    purrr::map(~ getMatomoData(., month = month, matomo_token = matomo_token))
-
-  matomo_data_frame <- do.call(rbind, matomo_data)
-
+  # hello <- getMatomoData("awel-kanton-zuerich",month = month, matomo_token = matomo_token)
+  
   total_data <- dplyr::left_join(opendata_swiss_data_frame,
-    matomo_data_frame,
-    by = c("name" = "label")
+                                 matomo_data_frame,
+                                 by = c("name" = "label")
   )
   
-
+  
   # filter the data by the issue date (in case for past months)
   total_data_filtered <-
     total_data %>%
     dplyr::filter(issued <= month)
-
+  
   total_data_sorted <- dplyr::arrange(total_data_filtered, desc(nb_visits))
-
+  
   return(total_data_sorted)
 }
 
