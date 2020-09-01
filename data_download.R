@@ -41,6 +41,18 @@ getWebAnalytics <- function(month, matomo_token, name) {
   # get all organizations of the kanton of Zürich
   organizations <- getOrganizations(name, month)
 
+  
+  # wrap Function into safely to capture errors in case of organisations for which data is missing
+  safematomo <-safely(getMatomoData)
+  
+  matomo_data <-
+    organizations %>%
+    purrr::map(~ safematomo(., month = month, matomo_token = matomo_token))
+  
+  # matomo_data_frame <- do.call(rbind, matomo_data)
+  
+  matomo_data_frame  <- map_dfr(matomo_data,"result")
+  
 
   # get the opendata.swiss data for the organizations
   opendata_swiss_data <-
