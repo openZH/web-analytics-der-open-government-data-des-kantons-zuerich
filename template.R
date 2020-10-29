@@ -19,17 +19,72 @@ source("data_download.R") # without "geoinformation-kanton-zuerich" due to insuf
 
 # source("token.R")
 
-# matomo token needed to query the API
-matomo_token <- matomo_token
+# set month ---------------------------------------------------------------
 
+month <- "2020-10-01"
+
+# set matomo token --------------------------------------------------------
+
+# matomo token needed to query the API
+token_openzh <- Sys.getenv("token_openzh")
+
+# opendata.swiss analytics ------------------------------------------------
 
 # function that gets the data
 OGDanalytics_2020_07 <- getWebAnalytics(
-  month = "2020-07-30",
-  matomo_token = matomo_token,
+  month = month,
+  matomo_token = token_openzh,
   name = "kanton-zuerich"
 )
 
 # function that exports the data
 writeWebAnalytics(OGDanalytics_2020_07, "L:/STAT/08_DS/06_Diffusion/OGD/Datenproduzenten_ZH/Open-ZH/ZH_Datasets_UniqueActions_2020-07.csv")
+
+# ZHweb Daten- und Publikationskatalog analytics --------------------------
+
+## get organisations for current month
+organizations_vec <- getOrganizations(month = month)
+
+## helper function to extract name and identifier
+read_opendataswiss_data <- function(org = NULL) {
+  dat <- package_search(fq = str_c("organization:", org), as = "table", rows = 1000)
+  
+  dat$results %>% 
+    as_tibble() %>% 
+    select(name, identifier)
+}
+
+## for loop to get identifer and name for all organisations
+
+identifier_openzh_list <- list()
+
+for (name in organizations_vec) {
+  identifier_openzh_list[[name]] <- read_opendataswiss_data(org = name)
+}
+
+## dataframe of identifier and name to join to join with ZHWeb Datenkatalog Resource
+identifier_openzh <- identifier_openzh_list %>% 
+  bind_rows()
+
+## read data from ZHweb Datenkatalog
+
+library(statZHmatomo)
+library(dplyr)
+
+con_zhwebdk <- set_matomo_server()
+
+zhwebdk <- read_matomo_data(connection = con_zhwebdk,
+                            format = "json",
+                            period = "month",
+                            apiModule = "CustomDimensions", 
+                            apiAction = "getCustomDimension", 
+                            idDimension = 9
+) %>% 
+  as_tibble() 
+
+## prepare for Export
+
+zhwebdk %>% 
+  left_join(identifier_openzh, by = c("label" = "identifier")) %>% 
+  relocate(name, .after = label) %>% 
 
