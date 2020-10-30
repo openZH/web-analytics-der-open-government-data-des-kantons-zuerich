@@ -1,4 +1,14 @@
-# Example for the Download
+
+# Header ------------------------------------------------------------------
+
+# Description:
+
+# libraries ---------------------------------------------------------------
+
+library(statZHmatomo)
+
+
+# Example for openzh Download  --------------------------------------------
 
 # step by step description
 
@@ -19,9 +29,10 @@ source("data_download.R") # without "geoinformation-kanton-zuerich" due to insuf
 
 # source("token.R")
 
-# set month ---------------------------------------------------------------
+# set paramater ---------------------------------------------------------------
 
-month <- "2020-10-01"
+month <- Sys.Date() - 15 # in YYYY-MM-DD Format for functions 
+year_month <- paste0(lubridate::year(month), "-", lubridate::month(month)) # in YYYY-MM format for filename
 
 # set matomo token --------------------------------------------------------
 
@@ -31,14 +42,19 @@ token_openzh <- Sys.getenv("token_openzh")
 # opendata.swiss analytics ------------------------------------------------
 
 # function that gets the data
-OGDanalytics_2020_07 <- getWebAnalytics(
+OGDanalytics <- getWebAnalytics(
   month = month,
   matomo_token = token_openzh,
   name = "kanton-zuerich"
 )
 
 # function that exports the data
-writeWebAnalytics(OGDanalytics_2020_07, "L:/STAT/08_DS/06_Diffusion/OGD/Datenproduzenten_ZH/Open-ZH/ZH_Datasets_UniqueActions_2020-07.csv")
+file_name <- paste0(
+  "L:/STAT/08_DS/06_Diffusion/OGD/Datenproduzenten_ZH/Open-ZH/ZH_Datasets_UniqueActions_",
+  year_month, 
+  ".csv")
+
+writeWebAnalytics(OGDanalytics, file_name)
 
 # ZHweb Daten- und Publikationskatalog analytics --------------------------
 
@@ -68,10 +84,7 @@ identifier_openzh <- identifier_openzh_list %>%
 
 ## read data from ZHweb Datenkatalog
 
-library(statZHmatomo)
-library(dplyr)
-
-con_zhwebdk <- set_matomo_server()
+con_zhwebdk <- set_matomo_server(server = "webzh-dk")
 
 zhwebdk <- read_matomo_data(connection = con_zhwebdk,
                             format = "json",
@@ -82,9 +95,111 @@ zhwebdk <- read_matomo_data(connection = con_zhwebdk,
 ) %>% 
   as_tibble() 
 
-## prepare for Export
+## prepare for zhweb-dk data for join with openzh data 
 
-zhwebdk %>% 
+zhwebdk_bind <- zhwebdk %>% 
   left_join(identifier_openzh, by = c("label" = "identifier")) %>% 
   relocate(name, .after = label) %>% 
+  
+  ## NAs in name can be filtered. These are data sets that are not published as 
+  ## OGD on opendata.swiss
+  
+  filter(!is.na(name)) %>% 
+  select(!where(is.list)) %>% 
+  
+  ## is segment needed? 
+  rename(metadata_segment = segment) %>% 
+  
+  ## does it needed the date column?
+  mutate(date = month) %>% 
+  
+  ## add variable to that identifies data as zhweb-dk Analytics
+  mutate(analytics = "zhweb-dk") %>% 
+  
+  ## remove label and idsubdatatable variables as they are not available in openzh analytics
+  select(-label, -idsubdatatable)
 
+
+## implement join of openzh data with openzh data
+
+OGD_openzh_zhweb_joined <- OGDanalytics %>% 
+  as_tibble() %>% 
+  
+  ## two variables need to be transformed from character type to numeric type 
+  ## in order to bind the data frames by rows
+  
+  separate(avg_time_on_dimension, into = c("del1", "del2", "avg_time_on_dimension"), sep = ":") %>% 
+  select(-del1, -del2) %>% 
+  mutate(avg_time_on_dimension = as.double(avg_time_on_dimension)) %>% 
+  mutate(avg_time_generation = as.double(parse_number(avg_time_generation))) %>%
+  
+  ## add variable that identified data as openzh Analytics
+  
+  mutate(analytics = "openzh") %>% 
+  
+  ## bind ZHWeb Datenkatalog 
+  
+  bind_rows(
+    zhwebdk_bind 
+  ) 
+
+# tidy data to fill variables with themes and org names -------------------
+
+OGD_analytics_combined <- OGD_openzh_zhweb_joined %>% 
+  arrange(name) %>%
+  fill(issued:work)
+
+OGD_analytics_combined %>% 
+  arrange(desc(nb_hits), name) %>% 
+  filter(str_detect(name, "covid")) %>% 
+  slice_head(n = 60) %>% 
+  
+  ggplot(aes(x = nb_hits, y = name, fill = analytics)) +
+  geom_col() +
+  labs(
+    title = "Number of view (nb_hits) for COVID datasets"
+  )
+
+OGD_analytics_combined %>% 
+  group_by(name) %>% 
+  mutate(prop = nb_hits / sum(nb_hits) * 100) %>% 
+  filter(str_detect(name, "covid")) %>% 
+  
+  ggplot(aes(x = prop, y = name, fill = analytics)) +
+  geom_col()  +
+  labs(
+    title = "Proportion of views (nb_hits) for COVID datasets"
+  )
+
+
+OGD_analytics_combined %>% 
+  arrange(desc(nb_hits), name) %>% 
+  filter(!str_detect(name, "covid")) %>% 
+  slice_head(n = 36) %>%
+  
+  ggplot(aes(x = nb_hits, y = reorder(name, nb_hits), fill = analytics)) +
+  geom_col() +
+  labs(
+    title = "Number of views (nb_hits) for top 30 non-COVID datasets"
+  )
+
+OGD_analytics_combined %>% 
+  group_by(name) %>% 
+  mutate(prop = nb_hits / sum(nb_hits) * 100) %>%  
+  filter(str_detect(name, "covid")) %>%  
+  arrange(desc(nb_hits), name) %>% 
+  slice_head(n = 36) %>%
+  
+  ggplot(aes(x = prop, y = name, fill = analytics)) +
+  geom_col()  +
+  labs(
+    title = "Proportion of views (nb_hits) for top 30 non-COVID datasets"
+  )
+
+# one resource several times ----------------------------------------------
+
+read.csv(file = "https://www.web.statistik.zh.ch/ogd/data/openzh/ZH_Datasets_UniqueActions_2020-09.csv", sep = ";") %>% 
+    as_tibble() %>% 
+    arrange(name) %>% 
+    View()
+ 
