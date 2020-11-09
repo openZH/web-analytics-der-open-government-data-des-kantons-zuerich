@@ -54,7 +54,7 @@ file_name <- paste0(
   year_month, 
   ".csv")
 
-writeWebAnalytics(OGDanalytics, file_name)
+# writeWebAnalytics(OGDanalytics, file_name)
 
 # ZHweb Daten- und Publikationskatalog analytics --------------------------
 
