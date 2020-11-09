@@ -186,7 +186,8 @@ OGD_analytics_combined %>%
 OGD_analytics_combined %>% 
   group_by(name) %>% 
   mutate(prop = nb_hits / sum(nb_hits) * 100) %>%  
-  filter(str_detect(name, "covid")) %>%  
+  ungroup() %>% 
+  filter(!str_detect(name, "covid")) %>%  
   arrange(desc(nb_hits), name) %>% 
   slice_head(n = 36) %>%
   
