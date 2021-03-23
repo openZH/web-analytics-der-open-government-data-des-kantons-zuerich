@@ -1,8 +1,6 @@
-
-library(tidyverse)
 library(magrittr)
 library(ckanr)
-library(fuzzyjoin)
+library(dplyr)
 
 
 #' function to write the webanalytics-data
