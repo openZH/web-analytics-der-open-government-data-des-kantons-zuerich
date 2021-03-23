@@ -29,7 +29,9 @@ jobs:
         
     - name: Query dependencies
       run: |
-          install.packages('tidyverse')
+          install.packages('dplyr')
+          install.packages('purrr')
+          install.packages('tidyr')
           install.packages('ckanr')
       shell: Rscript {0}
         
