@@ -16,6 +16,11 @@ jobs:
       matrix:
         config:
           - {os: ubuntu-latest,   r: 'release'}
+          
+     env:
+      R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      TOKEN_OPENZH: ${{ secrets.TOKEN_OPENZH }}
 
     steps:
     - uses: actions/checkout@master
@@ -23,11 +28,6 @@ jobs:
     - uses: r-lib/actions/setup-r@v1
       with:
         r-version: '3.5.3' # The R version to download (if necessary) and use.
-        
-     env:
-      R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
-      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-      TOKEN_OPENZH: ${{ secrets.TOKEN_OPENZH }}
         
       - name: Query dependencies
         run: |
