@@ -1,6 +1,7 @@
 library(magrittr)
 library(ckanr)
 library(dplyr)
+library(tidyr)
 
 
 #' function to write the webanalytics-data
@@ -314,5 +315,5 @@ spreadGroups <- function(x, themes) {
 
   themes_marked <- themes %>% mutate(anzahl = ifelse(name %in% y, 1, 0))
 
-  themes_spread <- spread(themes_marked, name, anzahl)
+  themes_spread <- tidyr::spread(themes_marked, name, anzahl)
 }
