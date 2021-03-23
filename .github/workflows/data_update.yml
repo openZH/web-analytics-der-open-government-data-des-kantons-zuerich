@@ -32,7 +32,8 @@ jobs:
           install.packages('dplyr')
           install.packages('purrr')
           install.packages('tidyr')
-          install.packages('ckanr')
+          install.packages('crul')
+          install.packages('ckanr')          
       shell: Rscript {0}
         
     - run: Rscript -e 'source("template.R")'
