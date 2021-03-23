@@ -18,6 +18,7 @@
 library(dplyr)
 library(purrr)
 library(ckanr)
+library(tidyr)
 
 source("data_download.R") # without "geoinformation-kanton-zuerich" due to insufficient metadata (see row 111)
 
