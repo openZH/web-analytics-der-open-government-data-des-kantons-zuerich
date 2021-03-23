@@ -53,5 +53,4 @@ jobs:
           pkgs <- installed.packages()[
           , "Package"]
           sessioninfo::session_info(pkgs, include_base = TRUE)
-        shell: Rscript {0}
-        github_token: ${{ secrets.GITHUB_TOKEN }}
+      shell: Rscript {0}
