@@ -1,6 +1,3 @@
-name: test
-'on': push
-jobs:
 on:
   schedule:
     - cron: "0 * * * *"
@@ -17,9 +14,9 @@ jobs:
         config:
           - {os: ubuntu-latest,   r: 'release'}
           
-     env:
+    env:
       R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
-      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      RSPM: ${{ matrix.config.rspm }}
       TOKEN_OPENZH: ${{ secrets.TOKEN_OPENZH }}
 
     steps:
