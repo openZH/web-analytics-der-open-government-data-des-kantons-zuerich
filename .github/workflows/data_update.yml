@@ -1,0 +1,56 @@
+on:
+  push:
+    branches:
+      - master
+    
+jobs:
+  generate-data:
+    runs-on: ${{ matrix.config.os }}
+
+    name: ${{ matrix.config.os }} (${{ matrix.config.r }})
+
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - {os: ubuntu-latest,   r: 'release'}
+          
+    env:
+      R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
+      RSPM: ${{ matrix.config.rspm }}
+      TOKEN_OPENZH: ${{ secrets.TOKEN_OPENZH }}
+
+    steps:
+    - uses: actions/checkout@master
+    
+    - uses: r-lib/actions/setup-r@v1
+      with:
+        r-version: '3.5.3' # The R version to download (if necessary) and use.
+        
+    - name: Query dependencies
+      run: |
+          install.packages('tidyverse')
+          install.packages('ckanr')
+      shell: Rscript {0}
+        
+    - run: Rscript -e 'source("template.R")'
+    
+    - name: Update Datasets
+      run: |
+          source("template.R")
+      shell: Rscript {0} 
+    
+    - name: Commit files
+      run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          git add --all
+          git commit -am "add data"
+          git push 
+          
+    - name: Session info
+      run: |
+          options(width = 100)
+          pkgs <- installed.packages()[, "Package"]
+          sessioninfo::session_info(pkgs, include_base = TRUE)
+      shell: Rscript {0}
