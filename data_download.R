@@ -32,7 +32,7 @@ writeWebAnalytics <- function(data, filename) {
 #' @examples  
 #' \donttest{ getWebAnalytics(month = "2020-03-31",matomo_token, name="kanton_zuerich")}
 
-getWebAnalytics <- function(month, matomo_token, name) {
+getWebAnalytics <- function(month, matomo_token, name, verbose=FALSE) {
   
   # convert character-date to date
   if (class(month) == "character") {
@@ -44,30 +44,21 @@ getWebAnalytics <- function(month, matomo_token, name) {
   # get all organizations of the kanton of Zürich
   organizations <- getOrganizations(name, month)
   
-  
-  
   # get the opendata.swiss data for the organizations
   opendata_swiss_data <-
     organizations %>%
     purrr::map(~ getOpendataSwissData(.))
   
-  # Test
-  # purrr::map(organizations[6:9],~getOpendataSwissData(.))
-  
-  # hello <- getOpendataSwissData("kanton-zuerich")
-  
   opendata_swiss_data_frame <- do.call(rbind, opendata_swiss_data)
   
   # get the matomo data for the organizations
-  safematomo <-safely(getMatomoData)
+  safematomo <- safely(getMatomoData)
   
   matomo_data <-
     organizations %>%
-    purrr::map(~ safematomo(., month = month, matomo_token = matomo_token))
+    purrr::map(~ safematomo(., month = month, matomo_token = matomo_token,verbose=verbose))
   
-  # matomo_data_frame <- do.call(rbind, matomo_data)
-  
-  matomo_data_frame  <- map_dfr(matomo_data,"result")
+  matomo_data_frame  <- map_dfr(matomo_data,"result", .null=data_frame())
   
   # hello <- getMatomoData("awel-kanton-zuerich",month = month, matomo_token = matomo_token)
   
@@ -194,8 +185,9 @@ getOpendataSwissData <- function(organization="kanton-zuerich") {
       groups = .$groups %>%
         purrr::map(~ getgroups(.)),
       organization_name = .$organization$name,
-      issued = as.Date(gsub("T", " ", data_results$issued), "%Y-%m-%d %H:%M:%S")
-    ) %>% bind_rows()
+      issued = as.Date(issued, "%d.%m.%Y")
+    ) %>% 
+    bind_rows()
 
 # data_with_groups$name
 
@@ -252,21 +244,37 @@ getgroups <- function(x) {
 #' #get all the datasets of a specific publisher with attributes (topics)
 #' getMatomoData(organization="geoinformation-kanton-zuerich",month = "2018-12-31",matomo_token=matomo_token)}
 
-getMatomoData <- function(organization, month, matomo_token = token) {
+getMatomoData <- function(organization, month, matomo_token = token, period="month", verbose=TRUE) {
 
   # api for matomo data
-  data <- suppressWarnings(
-    read.csv(paste0("https://piwik.opendata.swiss/index.php?
-module=API&method=CustomDimensions.getCustomDimension&
-format=csv&idSite=1&period=month&idDimension=2&
-reportUniqueId=CustomDimensions_getCustomDimension_idDimension--2&
-segment=dimension1%253D%253D", organization, "&label=&date=", month, "&
-filter_limit=false&format_metrics=1&expanded=1&idDimension=2&token_auth=", 
-                    matomo_token),
-      skipNul = TRUE, encoding = "UTF-8", check.names = FALSE
+#   data <- suppressWarnings(
+#     read.csv(paste0("https://opendata.opsone-analytics.ch/index.php?
+# module=API&method=CustomDimensions.getCustomDimension&
+# format=csv&idSite=1&period=month&idDimension=2&
+# reportUniqueId=CustomDimensions_getCustomDimension_idDimension--2&
+# segment=dimension1%253D%253D", organization, "&date=", month, "&
+# filter_limit=false&format_metrics=1&expanded=1&idDimension=2&token_auth=", 
+#                     matomo_token),
+#       skipNul = TRUE, encoding = "UTF-8", check.names = FALSE
+#     )
+#   )
+# 
+  
+query <- paste0("https://opendata.opsone-analytics.ch/index.php?expanded=1&filter_limit=-1&format=CSV&idDimension=2&idSite=1&method=CustomDimensions.getCustomDimension&module=API&period=day&reportUniqueId=CustomDimensions_getCustomDimension_idDimension--1&segment=dimension1%253D%253D",
+                organization,
+                "&period=", period,
+                "&date=", month,
+                "&token_auth=",matomo_token)
+  
+  
+if(verbose==TRUE) {print(query)}
+
+data <- suppressWarnings(
+    read.csv(query,
+             skipNul = TRUE, encoding = "UTF-8", check.names = FALSE
     )
   )
-
+  
   # rename first column
   names(data)[1] <- "label"
 
