@@ -57,7 +57,7 @@ getWebAnalytics <- function(month, matomo_token, name, verbose=FALSE) {
     organizations %>%
     purrr::map(~ safematomo(., month = month, matomo_token = matomo_token,verbose=verbose))
   
-matomo_data_frame  <- map_dfr(matomo_data,"result", .null=tibble %>% dplyr::mutate_if(is.numeric, as.factor))
+matomo_data_frame  <- map_dfr(matomo_data,"result", .null=tibble()%>% dplyr::mutate_if(is.numeric, as.factor))
  
   
 total_data <- dplyr::left_join(opendata_swiss_data_frame,
