@@ -57,7 +57,7 @@ getWebAnalytics <- function(month, matomo_token, name, verbose=FALSE) {
     organizations %>%
     purrr::map(~ safematomo(., month = month, matomo_token = matomo_token,verbose=verbose))
   
-  matomo_data_frame  <- map_dfr(matomo_data,"result", .null=data_frame())
+  matomo_data_frame  <- map_dfr(matomo_data,"result", .null=tibble %>% dplyr::mutate_if(is.numeric, as.factor)
   
   # hello <- getMatomoData("awel-kanton-zuerich",month = month, matomo_token = matomo_token)
   
