@@ -21,11 +21,11 @@ source("data_download.R") # without "geoinformation-kanton-zuerich" due to insuf
 
 # matomo token needed to query the API
 
-matomo_token <- Sys.getenv("token_openzh")
+matomo_token <- Sys.getenv("TOKEN_OPENZH")
 
 # ymd <- Sys.Date()
 
-ymd <- as.Date("2021-02-28", format="%Y-%m-%d")
+ymd <- as.Date("2020-10-31", format="%Y-%m-%d")
 
 ym <- format(ymd, "%Y-%m")
 
@@ -48,6 +48,6 @@ OGDanalytics <- getWebAnalytics(
 )
 
 # function that exports the data
-writeWebAnalytics(OGDanalytics, paste("data/ZH_Datasets_UniqueActions_", ym ,".csv"))
+writeWebAnalytics(OGDanalytics, paste0("data/ZH_Datasets_UniqueActions_", ym ,".csv"))
 
 }
