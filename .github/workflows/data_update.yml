@@ -32,6 +32,7 @@ jobs:
           install.packages('dplyr')
           install.packages('purrr')
           install.packages('tidyr')
+          install.packages('curl')
           install.packages('crul')
           install.packages('ckanr')          
       shell: Rscript {0}
