@@ -28,9 +28,7 @@ source("data_download.R") # without "geoinformation-kanton-zuerich" due to insuf
 
 matomo_token <- Sys.getenv("TOKEN_OPENZH")
 
-# ymd <- Sys.Date()
-
-ymd <- as.Date("2020-10-31", format="%Y-%m-%d")
+ymd <- Sys.Date()
 
 ym <- format(ymd, "%Y-%m")
 
