@@ -23,21 +23,15 @@ source("data_download.R") # without "geoinformation-kanton-zuerich" due to insuf
 
 matomo_token <- Sys.getenv("TOKEN_OPENZH")
 
-# ymd <- Sys.Date()
+ymd <- Sys.Date()
 
-ymd <- as.Date("2020-10-31", format="%Y-%m-%d")
+ymd <- as.Date("2020-11-30", format="%Y-%m-%d")
 
 ym <- format(ymd, "%Y-%m")
 
 y <- format(ymd, "%Y")
 
-date.end.month <- seq(as.Date(paste0(y, "-02-01")),length=12,by="months")-1
-
-if(
-  !file.exists("data/ZH_Datasets_UniqueActions_", ym ,".csv") &&
-  
-   ymd %in% date.end.month) {
-
+if(!file.exists("data/ZH_Datasets_UniqueActions_", ym ,".csv")) {
 
 # function that gets the data
 OGDanalytics <- getWebAnalytics(
@@ -45,7 +39,8 @@ OGDanalytics <- getWebAnalytics(
   matomo_token = matomo_token,
   name = "kanton-zuerich",
   verbose=TRUE
-)
+) %>% 
+  mutate(issued=format(issued,format="%d.%m.%Y"))
 
 # function that exports the data
 writeWebAnalytics(OGDanalytics, paste0("data/ZH_Datasets_UniqueActions_", ym ,".csv"))
