@@ -15,6 +15,11 @@
 #8. adjust the filename in line 32
 #9. curser on line 32 and press ctrl+Enter to export the data as a csv-file
 
+library(dplyr)
+library(purrr)
+library(ckanr)
+library(tidyr)
+
 source("data_download.R") # without "geoinformation-kanton-zuerich" due to insufficient metadata (see row 111)
 
 # source("token.R")
@@ -24,8 +29,6 @@ source("data_download.R") # without "geoinformation-kanton-zuerich" due to insuf
 matomo_token <- Sys.getenv("TOKEN_OPENZH")
 
 ymd <- Sys.Date()
-
-ymd <- as.Date("2020-11-30", format="%Y-%m-%d")
 
 ym <- format(ymd, "%Y-%m")
 

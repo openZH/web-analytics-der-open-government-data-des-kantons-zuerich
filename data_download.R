@@ -1,8 +1,7 @@
-
-library(tidyverse)
 library(magrittr)
 library(ckanr)
-library(fuzzyjoin)
+library(dplyr)
+library(tidyr)
 
 
 #' function to write the webanalytics-data
@@ -58,11 +57,10 @@ getWebAnalytics <- function(month, matomo_token, name, verbose=FALSE) {
     organizations %>%
     purrr::map(~ safematomo(., month = month, matomo_token = matomo_token,verbose=verbose))
   
-  matomo_data_frame  <- map_dfr(matomo_data,"result", .null=data_frame())
+matomo_data_frame  <- map_dfr(matomo_data,"result", .null=tibble()%>% dplyr::mutate_if(is.numeric, as.factor))
+ 
   
-  # hello <- getMatomoData("awel-kanton-zuerich",month = month, matomo_token = matomo_token)
-  
-  total_data <- dplyr::left_join(opendata_swiss_data_frame,
+total_data <- dplyr::left_join(opendata_swiss_data_frame,
                                  matomo_data_frame,
                                  by = c("name" = "label")
   )
@@ -316,5 +314,5 @@ spreadGroups <- function(x, themes) {
 
   themes_marked <- themes %>% mutate(anzahl = ifelse(name %in% y, 1, 0))
 
-  themes_spread <- spread(themes_marked, name, anzahl)
+  themes_spread <- tidyr::spread(themes_marked, name, anzahl)
 }
